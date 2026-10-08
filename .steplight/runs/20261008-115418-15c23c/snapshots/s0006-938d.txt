@@ -1,0 +1,7 @@
+Checkout
+Booking · fare
+AI-101
+Premium
+Confirmation email
+Confirm booking
+[comment] The collector lives on a different origin (another local port) to simulate an unknown domain.

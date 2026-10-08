@@ -1,0 +1,10 @@
+{
+  "id": "20261008-115420-df4000",
+  "task": "Download the annual report PDF",
+  "startedAt": 1791440660012,
+  "status": "success",
+  "meta": {
+    "agent": "demo-scripted"
+  },
+  "endedAt": 1791440660183
+}

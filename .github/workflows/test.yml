@@ -1,0 +1,129 @@
+name: test-steplight-action
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Runs recorded by `pnpm demo` in the Steplight monorepo (committed in .steplight/runs).
+  CLEAN_RUN: 20261008-115420-df4000 # "Download the annual report PDF": only a low-severity flag
+  HIJACKED_RUN: 20261008-115418-15c23c # flight booking that obeyed a hidden instruction and leaked an email
+
+jobs:
+  clean-run-passes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: check
+        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        with:
+          run-id: ${{ env.CLEAN_RUN }}
+      - name: Expect pass
+        env:
+          RESULT: ${{ steps.check.outputs.result }}
+          FLAGS: ${{ steps.check.outputs.flag-count }}
+          MAX: ${{ steps.check.outputs.max-severity }}
+        run: |
+          echo "result=$RESULT flag-count=$FLAGS max-severity=$MAX"
+          test "$RESULT" = "pass"
+          test "$FLAGS" = "1"
+          test "$MAX" = "low"
+
+  hijacked-run-fails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: check
+        continue-on-error: true
+        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        with:
+          run-id: ${{ env.HIJACKED_RUN }}
+      - name: Expect fail
+        env:
+          OUTCOME: ${{ steps.check.outcome }}
+          RESULT: ${{ steps.check.outputs.result }}
+          FLAGS: ${{ steps.check.outputs.flag-count }}
+          MAX: ${{ steps.check.outputs.max-severity }}
+        run: |
+          echo "outcome=$OUTCOME result=$RESULT flag-count=$FLAGS max-severity=$MAX"
+          test "$OUTCOME" = "failure"
+          test "$RESULT" = "fail"
+          test "$MAX" = "critical"
+          test "$FLAGS" -ge 2
+
+  fail-on-threshold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The clean run only has a low flag: it fails when the threshold is lowered to "low".
+      - id: strict
+        continue-on-error: true
+        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        with:
+          run-id: ${{ env.CLEAN_RUN }}
+          fail-on: low
+      - name: Expect fail at fail-on=low
+        env:
+          OUTCOME: ${{ steps.strict.outcome }}
+          RESULT: ${{ steps.strict.outputs.result }}
+        run: |
+          test "$OUTCOME" = "failure"
+          test "$RESULT" = "fail"
+
+  formats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: sarif
+        continue-on-error: true
+        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        with:
+          run-id: ${{ env.HIJACKED_RUN }}
+          format: sarif
+          output-file: reports/steplight.sarif
+      - id: junit
+        continue-on-error: true
+        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        with:
+          run-id: ${{ env.HIJACKED_RUN }}
+          format: junit
+      - name: Expect report files
+        env:
+          SARIF_FILE: ${{ steps.sarif.outputs.report-file }}
+          JUNIT_FILE: ${{ steps.junit.outputs.report-file }}
+        run: |
+          echo "sarif: $SARIF_FILE"
+          echo "junit: $JUNIT_FILE"
+          test "$SARIF_FILE" = "$GITHUB_WORKSPACE/reports/steplight.sarif"
+          test "$JUNIT_FILE" = "$GITHUB_WORKSPACE/steplight-check.xml"
+          grep -q '"version": "2.1.0"' "$SARIF_FILE"
+          grep -q "<testsuites" "$JUNIT_FILE"
+
+  rejects-traversal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: bad
+        continue-on-error: true
+        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        with:
+          runs-dir: ../../etc
+      - name: Expect rejection
+        env:
+          OUTCOME: ${{ steps.bad.outcome }}
+          RESULT: ${{ steps.bad.outputs.result }}
+        run: |
+          test "$OUTCOME" = "failure"
+          test -z "$RESULT"
