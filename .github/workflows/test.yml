@@ -19,7 +19,7 @@ jobs:
         with:
           persist-credentials: false
       - id: check
-        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        uses: steplight-dev/steplight-check-action@ca1c3dab43a7776ad9b0781393d2b3e910ebf4ab # v1.0.1
         with:
           run-id: ${{ env.CLEAN_RUN }}
       - name: Expect pass
@@ -41,7 +41,7 @@ jobs:
           persist-credentials: false
       - id: check
         continue-on-error: true
-        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        uses: steplight-dev/steplight-check-action@ca1c3dab43a7776ad9b0781393d2b3e910ebf4ab # v1.0.1
         with:
           run-id: ${{ env.HIJACKED_RUN }}
       - name: Expect fail
@@ -66,7 +66,7 @@ jobs:
       # The clean run only has a low flag: it fails when the threshold is lowered to "low".
       - id: strict
         continue-on-error: true
-        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        uses: steplight-dev/steplight-check-action@ca1c3dab43a7776ad9b0781393d2b3e910ebf4ab # v1.0.1
         with:
           run-id: ${{ env.CLEAN_RUN }}
           fail-on: low
@@ -86,14 +86,14 @@ jobs:
           persist-credentials: false
       - id: sarif
         continue-on-error: true
-        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        uses: steplight-dev/steplight-check-action@ca1c3dab43a7776ad9b0781393d2b3e910ebf4ab # v1.0.1
         with:
           run-id: ${{ env.HIJACKED_RUN }}
           format: sarif
           output-file: reports/steplight.sarif
       - id: junit
         continue-on-error: true
-        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        uses: steplight-dev/steplight-check-action@ca1c3dab43a7776ad9b0781393d2b3e910ebf4ab # v1.0.1
         with:
           run-id: ${{ env.HIJACKED_RUN }}
           format: junit
@@ -117,7 +117,7 @@ jobs:
           persist-credentials: false
       - id: bad
         continue-on-error: true
-        uses: Thirumalaiboobathi/steplight-check-action@9bdb94f45b151be0b3aea5a48fa18eca02f5c0a1 # v1.0.0
+        uses: steplight-dev/steplight-check-action@ca1c3dab43a7776ad9b0781393d2b3e910ebf4ab # v1.0.1
         with:
           runs-dir: ../../etc
       - name: Expect rejection
